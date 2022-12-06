@@ -1,11 +1,11 @@
-# xsphere - A package to display NWP fields of unstructured grid with xarray.
+# xsphere - A package to display NWP fields on spherical unstructured grid with xarray.
 
-The code in this repository provides a solution to display with xarray NWP fields of unstructured grid. 
+The code in this repository provides a solution to display with xarray NWP fields on spherical unstructured grid. 
 It builds mainly upon xarray, cartopy and pygsp.
 
 ATTENTION: The code is subject to changes in the coming months.
 
-The folder `tutorials` (will) provide jupyter notebooks describing various features of xsphere.
+The folder `tutorials` provides some code snippets describing various features of xsphere.
 
 The folder `docs` (will) contains slides and notebooks explaining the xsphere framework.
 
