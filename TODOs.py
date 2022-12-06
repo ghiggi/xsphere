@@ -6,22 +6,22 @@ Created on Tue Dec  6 12:54:57 2022
 @author: ghiggi
 """
 
-# TODO: 
-# - add_HealpixMesh, 
+# TODO:
+# - add_HealpixMesh,
 # - add_EquiangularMesh,
-# - add_GaussianLegendreMesh, 
+# - add_GaussianLegendreMesh,
 # - add_CubedMesh
-# --> pgysp graph? 
+# --> pgysp graph?
 
-# - reshape equiangular to lat, lon core dim 
+# - reshape equiangular to lat, lon core dim
 # - reshape_equiangular_to_unstructured
 
-# - Check_mesh()  --> Check Polygon mpatches 
+# - Check_mesh()  --> Check Polygon mpatches
 
 # - 3D plots
 
-## Add from shapefile 
-# - da.sphere.add_mesh_from_shp(fpath)  # poly.shp 
+## Add from shapefile
+# - da.sphere.add_mesh_from_shp(fpath)  # poly.shp
 # - da.sphere.add_nodes_from_shp(fpath) # point.shp
 # - da.sphere.save_mesh_to_shp()
 # - da.sphere.save_nodes_to_shp()
