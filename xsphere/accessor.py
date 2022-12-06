@@ -14,8 +14,10 @@ from xsphere.checks import (
     check_mesh_exist,
     check_node_dim
 )
-# get_PolygonPatchesList, SphericalVoronoiMesh
+from xsphere.poly_patches import get_PolygonPatchesList
+from xsphere.meshes import SphericalVoronoiMesh
 
+# Refactor SphereDatasetAccesor ... too much repeated code 
 
 class Sphere_Base_Accessor: 
     
@@ -102,16 +104,68 @@ class Sphere_Base_Accessor:
         else:
             return True  
     
+
+@xr.register_dataarray_accessor("sphere")
+class SphereDataArrayAccessor(Sphere_Base_Accessor):
+    """xarray.sphere DataArray accessor."""
+    
+    def __init__(self, xarray_obj):
+        super().__init__(xarray_obj)
+        
+    def plot(self, *args, **kwargs):
+        """Map unstructured grid values."""
+        from .plot import plot
+        p = plot(self._obj , *args, **kwargs)
+        return p 
+    
+    def contour(self, *args, **kwargs):
+        """Contour of unstructured grid values."""
+        from .plot import contour
+        p = contour(self._obj , *args, **kwargs)
+        return p 
+    
+    def contourf(self, *args, **kwargs):
+        """Contourf of unstructured grid values."""
+        from .plot import contourf
+        p = contourf(self._obj , *args, **kwargs)
+        return p 
+        
+    def plot_mesh(self, *args, **kwargs):  
+        """Plot the unstructured grid mesh structure."""
+        from .plot import plot_mesh
+        p = plot_mesh(self._obj , *args, **kwargs)
+        return p 
+    
+    def plot_mesh_order(self, *args, **kwargs):  
+        """Plot the unstructured grid mesh order."""
+        from .plot import plot_mesh_order
+        p = plot_mesh_order(self._obj , *args, **kwargs)
+        return p 
+    
+    def plot_mesh_area(self, *args, **kwargs):  
+        """Plot the unstructured grid mesh area."""
+        from .plot import plot_mesh_area
+        p = plot_mesh_area(self._obj , *args, **kwargs)
+        return p 
+    
+    def plot_nodes(self, *args, **kwargs):  
+        """Plot the unstructured grid nodes."""
+        from .plot import plot_nodes
+        p = plot_nodes(self._obj , *args, **kwargs)
+        return p
+    
+
 @xr.register_dataset_accessor("sphere")
 class SphereDatasetAccessor(Sphere_Base_Accessor):
     """xarray.sphere Dataset accessor."""
     
-    def __init__(self, ds):
-        self.ds = ds
+    def __init__(self, xarray_obj):
+        super().__init__(xarray_obj)
+
     
     def plot(self, col=None, row=None, *args, **kwargs):
         """Map unstructured grid values."""
-        ds = self.ds
+        ds = self._obj 
         # Check number of variable 
         list_vars = list(ds.data_vars.keys())  
         n_vars = len(list_vars)
@@ -141,7 +195,7 @@ class SphereDatasetAccessor(Sphere_Base_Accessor):
             
     def contour(self, col=None, row=None, *args, **kwargs):
         """Contour of unstructured grid values."""
-        ds = self.ds
+        ds = self._obj 
         # Check number of variable 
         list_vars = list(ds.data_vars.keys())  
         n_vars = len(list_vars)
@@ -154,12 +208,12 @@ class SphereDatasetAccessor(Sphere_Base_Accessor):
         if col is None and row is None: 
             raise NotImplementedError("Specify 'col' or 'row'.")
         # Squeeze the dataset (to drop dim with 1)
-        ds = self.ds.squeeze()
+        ds = self._obj .squeeze()
         # Check remaining dimension
         if len(ds.dims) > 2: 
             raise ValueError("There must be just 1 dimension to facet (in addition to the 'node' dimension).")
         # Convert to DataArray
-        da = self.ds.to_array()  
+        da = self._obj .to_array()  
         if col is not None:
             p = da.sphere.contour(row="variable",col=col *args, **kwargs)
             return p 
@@ -171,7 +225,7 @@ class SphereDatasetAccessor(Sphere_Base_Accessor):
 
     def contourf(self, col=None, row=None, *args, **kwargs):
         """Contourf of unstructured grid values."""
-        ds = self.ds
+        ds = self._obj 
         # Check number of variable 
         list_vars = list(ds.data_vars.keys())  
         n_vars = len(list_vars)
@@ -184,17 +238,17 @@ class SphereDatasetAccessor(Sphere_Base_Accessor):
         if col is None and row is None: 
             raise NotImplementedError("Specify 'col' or 'row'.")
         # Squeeze the dataset (to drop dim with 1)
-        ds = self.ds.squeeze()
+        ds = self._obj .squeeze()
         # Check remaining dimension
         if len(ds.dims) > 2: 
             raise ValueError("There must be just 1 dimension to facet (in addition to the 'node' dimension).")
         # Convert to DataArray
-        da = self.ds.to_array()  
+        da = self._obj .to_array()  
         if col is not None:
-            p = da.sphere.contourf(row="variable",col=col *args, **kwargs)
+            p = da.sphere.contourf(row="variable", col=col *args, **kwargs)
             return p 
         elif row is not None: 
-            p = da.sphere.contourf(col="variable",row=row,*args, **kwargs)
+            p = da.sphere.contourf(col="variable", row=row,*args, **kwargs)
             return p 
         else:
             raise NotImplementedError("When 'col' and 'row' are both None (END).")
@@ -202,78 +256,30 @@ class SphereDatasetAccessor(Sphere_Base_Accessor):
     def plot_mesh(self, *args, **kwargs):  
         """Plot the unstructured grid mesh structure."""
         from .plot import plot_mesh 
-        da = self.ds[list(self.ds.data_vars.keys())[0]]
+        da = self._obj [list(self._obj .data_vars.keys())[0]]
         p = plot_mesh(da, *args, **kwargs)
         return p 
     
     def plot_mesh_order(self, *args, **kwargs):  
         """Plot the unstructured grid mesh order."""
         from .plot import plot_mesh_order
-        da = self.ds[list(self.ds.data_vars.keys())[0]]
+        da = self._obj [list(self._obj .data_vars.keys())[0]]
         p = plot_mesh_order(da, *args, **kwargs)
         return p 
     
     def plot_mesh_area(self, *args, **kwargs):  
         """Plot the unstructured grid mesh area."""
-        from .plot import _plot_mesh_area
-        da = self.ds[list(self.ds.data_vars.keys())[0]]
+        from .plot import plot_mesh_area
+        da = self._obj [list(self._obj .data_vars.keys())[0]]
         p = plot_mesh_area(da, *args, **kwargs)
         return p 
     
     def plot_nodes(self, *args, **kwargs):  
         """Plot the unstructured grid nodes."""
-        from .plot import _plot_nodes
-        da = self.ds[list(self.ds.data_vars.keys())[0]]
+        from .plot import plot_nodes
+        da = self._obj [list(self._obj .data_vars.keys())[0]]
         p = plot_nodes(da, *args, **kwargs)
         return p
     
-@xr.register_dataarray_accessor("sphere")
-class SphereDataArrayAccessor(Sphere_Base_Accessor):
-    """xarray.sphere DataArray accessor."""
-    
-    def __init__(self, da):
-        self.da = da
-        
-    def plot(self, *args, **kwargs):
-        """Map unstructured grid values."""
-        p = _plot(self.da, *args, **kwargs)
-        return p 
-    
-    def contour(self, *args, **kwargs):
-        """Contour of unstructured grid values."""
-        p = _contour(self.da, *args, **kwargs)
-        return p 
-    
-    def contourf(self, *args, **kwargs):
-        """Contourf of unstructured grid values."""
-        p = _contourf(self.da, *args, **kwargs)
-        return p 
-        
-    def plot_mesh(self, *args, **kwargs):  
-        """Plot the unstructured grid mesh structure."""
-        p = _plot_mesh(self.da, *args, **kwargs)
-        return p 
-    
-    def plot_mesh_order(self, *args, **kwargs):  
-        """Plot the unstructured grid mesh order."""
-        p = _plot_mesh_order(self.da, *args, **kwargs)
-        return p 
-    
-    def plot_mesh_area(self, *args, **kwargs):  
-        """Plot the unstructured grid mesh area."""
-        p = _plot_mesh_area(self.da, *args, **kwargs)
-        return p 
-    
-    def plot_nodes(self, *args, **kwargs):  
-        """Plot the unstructured grid nodes."""
-        p = _plot_nodes(self.da, *args, **kwargs)
-        return p
-    
-    def has_mesh(self): 
-        # Check mesh attached 
-        # TODO: check also format of mesh 
-        if 'mesh' not in list(self.da.coords.keys()):
-            return False 
-        else:
-            return True    
+
     

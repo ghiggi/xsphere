@@ -12,7 +12,7 @@ Created on Tue Dec  6 11:13:08 2022
 
 import pygsp as pg
 from xsphere.remapping import compute_interpolation_weights
-from xsphere.remapping import get_available_interp_methods
+from xsphere.cdo import get_available_interp_methods
 
 ##----------------------------------------------------------------------------.
 ### Define spherical samplings 

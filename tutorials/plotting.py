@@ -5,14 +5,13 @@ Created on Tue Jan 19 14:31:51 2021
 
 @author: ghiggi
 """
-import os
 import cartopy
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import xarray as xr
 import pygsp as pg
 import xsphere  
-  
+import xsphere.plot
 
 
 ##-----------------------------------------------------------------------------.
@@ -28,36 +27,38 @@ import xsphere
 # ds = ds.drop('level')
 ##-----------------------------------------------------------------------------.
 sampling = "Healpix_400km" # you can choose another sampling ;)
-data_dir = "/data/weather_prediction/data"
-exp_dir = "/data/weather_prediction/experiments"
-data_sampling_dir = os.path.join(data_dir, sampling)
-# - Dynamic data (i.e. pressure and surface levels variables)
-ds_dynamic = readDatasets(data_dir=data_sampling_dir, feature_type='dynamic')
-# - Boundary conditions data (i.e. TOA)
-ds_bc = readDatasets(data_dir=data_sampling_dir, feature_type='bc')
-# - Static features
-ds_static = readDatasets(data_dir=data_sampling_dir, feature_type='static')
 
-ds_dynamic = ds_dynamic.drop(["level","lat","lon"])
-ds_bc = ds_bc.drop(["lat","lon"])
+dynamic_fpath = "/home/ghiggi/Projects/DeepSphere/data/toy_data/ERA5_HRES/Healpix_400km/Data/dynamic/time_chunked/dynamic.zarr"
+static_fpath = "/home/ghiggi/Projects/DeepSphere/data/toy_data/ERA5_HRES/Healpix_400km/Data/static.zarr"
+ds_dynamic = xr.open_zarr(dynamic_fpath)
+ds_static = xr.open_zarr(static_fpath) 
+
+ds_dynamic = ds_dynamic.drop(["lat","lon"])
 ds_static = ds_static.drop(["lat","lon"])
 
 #-----------------------------------------------------------------------------.
-ds = ds_dynamic
+ds = ds_dynamic['data'].to_dataset("feature")
+ds = ds [['t850','t1000','t500']]
 ds = ds.isel(time=[0,6,12,18]) # select 4 timesteps
 ds = ds.load()
 
 ##----------------------------------------------------------------------------.
 ## Add nodes mesh from pygsp graph  
+# - Add lon, lat if not available 
 ds1 = ds.sphere.add_nodes_from_pygsp(pygsp_graph=pg.graphs.SphereHealpix(subdivisions=16, k=20, nest=True))
+
+## Not yet implemented:
+# da.sphere.add_mesh_from_bnds(x, y)
+# da.sphere.plot.add_mesh_from_shp(fpath)
+# da.sphere.plot.add_nodes_from_shp(fpath) 
 
 ##----------------------------------------------------------------------------.
 ## Infer mesh using SphericalVoronoi from node coordinates
 ds = ds.sphere.add_SphericalVoronoiMesh(x='lon', y='lat')
 
+ds
 ##----------------------------------------------------------------------------.
 ## Prepare data for below plots
-da = ds['z500']
 da = ds['t850']
 da_single = ds['t850'].isel(time=0)
 
@@ -75,18 +76,8 @@ da_single = ds['t850'].isel(time=0)
 
 # ds = da.sphere.compute_mesh_area() # current: planar assumption
 
-## Not yet implemented:
-# da.sphere.add_mesh_from_bnds(x, y)
-# da.sphere.plot.add_mesh_from_shp(fpath)
-# da.sphere.plot.add_nodes_from_shp(fpath) 
 
-        
-a = da_dynamic.isel(time=slice(0,2)).sel(feature=['q850','q1000'])
-a.sphere.add_SphericalVoronoiMesh(x='lon', y='lat').sphere.plot(col="feature", row='time',
-                                                                edgecolors = None, 
-                                                                linewidths = 0.001,
-                                                                subplot_kws={'projection': cartopy.crs.Robinson()})
-plt.show()
+
 
 #----------------------------------------------------------------------------.
 #### Define reference coordinate reference system 
@@ -289,7 +280,7 @@ for ax in fg.axes.flat:
                                                        alpha=0.4))
     
 # - Superimpose contours to each panel
-fg.map_dataarray_unstructured(fg, xsphere._contour, 
+fg.map_dataarray_unstructured(fg, xsphere.plot.contour, 
                               subplot_kws={'projection': crs_proj},
                               contour_labels_format="{:.0f}".format,
                               contour_labels_format_fontsize=5, 
@@ -302,88 +293,89 @@ plt.show()
 #-----------------------------------------------------------------------------.
 #### Plot() single  
 fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=crs_proj))
-p = xsphere._plot(da_single,
-                  ax=ax, 
-                  transform=ccrs.Geodetic(),  
-                  # Projection options
-                  subplot_kws={'projection': crs_proj},
-                  # Polygon border option
-                  edgecolors="white", # None to not display polygon border 
-                  linewidths=0.01,
-                  antialiased=True,
-                  alpha = 1,
-                  # Colorbar options 
-                  add_colorbar = True,
-                  cmap = plt.get_cmap('Spectral_r'),
-                  norm=None,
-                  center=None,
-                  colors=None,
-                  levels=None,
-                  #   vmin = 48000,
-                  #   vmax = 56500,
-                  robust=True,
-                  extend = 'both', # 'neither', 'both', 'min', 'max'
-                  # Add colorbar label 
-                  add_labels = True)
+p = xsphere.plot.plot(da_single,
+                      ax=ax, 
+                      transform=ccrs.Geodetic(),  
+                      # Projection options
+                      subplot_kws={'projection': crs_proj},
+                      # Polygon border option
+                      edgecolors="white", # None to not display polygon border 
+                      linewidths=0.01,
+                      antialiased=True,
+                      alpha = 1,
+                      # Colorbar options 
+                      add_colorbar = True,
+                      cmap = plt.get_cmap('Spectral_r'),
+                      norm=None,
+                      center=None,
+                      colors=None,
+                      levels=None,
+                      #   vmin = 48000,
+                      #   vmax = 56500,
+                      robust=True,
+                      extend = 'both', # 'neither', 'both', 'min', 'max'
+                      # Add colorbar label 
+                      add_labels = True)
 
 ax.coastlines(alpha=0.2)
 plt.show()
 
 #### Contour() single 
 fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=crs_proj))
-p = xsphere._contour(da_single, 
-                     x='lon',
-                     y='lat',
-                     transform=ccrs.PlateCarree(),  
-                     ax=ax, 
-                     # Line options
-                     linewidths=1,
-                     # Contour label options
-                     add_contour_labels=True, 
-                     add_contour_labels_interactively=False, 
-                     contour_labels_colors="black", 
-                     contour_labels_fontsize=8, 
-                     contour_labels_inline=True,   
-                     contour_labels_format="{:.0f} ".format, 
-                     # Color options 
-                     add_colorbar = False,
-                     cmap = plt.get_cmap('Spectral_r'),
-                     levels=10,
-                    #  vmin = 48000,
-                    #  vmax = 56500,
-                     robust=True,
-                     norm=None,
-                     center=None,
-                     # colors="black",
-                     cbar_kwargs=None,
-                     # Add colorbar label 
-                     add_labels = True)
+p = xsphere.plot.contour(da_single, 
+                         x='lon',
+                         y='lat',
+                         transform=ccrs.PlateCarree(),  
+                         ax=ax, 
+                         # Line options
+                         linewidths=1,
+                         # Contour label options
+                         add_contour_labels=True, 
+                         add_contour_labels_interactively=False, 
+                         contour_labels_colors="black", 
+                         contour_labels_fontsize=8, 
+                         contour_labels_inline=True,   
+                         contour_labels_format="{:.0f} ".format, 
+                         # Color options 
+                         add_colorbar = False,
+                         cmap = plt.get_cmap('Spectral_r'),
+                         levels=10,
+                        #  vmin = 48000,
+                        #  vmax = 56500,
+                         robust=True,
+                         norm=None,
+                         center=None,
+                         # colors="black",
+                         cbar_kwargs=None,
+                         # Add colorbar label 
+                         add_labels = True)
 ax.coastlines(alpha=0.2)
 plt.show()
 
 #### Contourf() single
 fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=crs_proj))
-p = xsphere._contourf(da_single, 
-                      x='lon',
-                      y='lat',
-                     transform=ccrs.PlateCarree(),  
-                     ax=ax, 
-                     plot_type='contourf',
-                     # Color options 
-                     add_colorbar = True,
-                     cmap = plt.get_cmap('Spectral_r'),
-                     levels=10,
-                     #  vmin = 48000,
-                     #  vmax = 56500,
-                     robust=True,
-                     norm=None,
-                     center=None,
-                     # colors="black",
-                     cbar_kwargs=None,
-                     # Add colorbar label 
-                     add_labels = True)
+p = xsphere.plot.contourf(da_single, 
+                          x='lon',
+                          y='lat',
+                          transform=ccrs.PlateCarree(),  
+                          ax=ax, 
+                          plot_type='contourf',
+                          # Color options 
+                          add_colorbar = True,
+                          cmap = plt.get_cmap('Spectral_r'),
+                          levels=10,
+                          #  vmin = 48000,
+                          #  vmax = 56500,
+                          robust=True,
+                          norm=None,
+                          center=None,
+                          # colors="black",
+                          cbar_kwargs=None,
+                          # Add colorbar label 
+                          add_labels = True)
 ax.coastlines(alpha=0.2)
 plt.show()
+
 #-----------------------------------------------------------------------------.
 #### Plot mesh
 fig, ax = plt.subplots(1, 1, subplot_kw=dict(projection=crs_proj))

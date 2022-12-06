@@ -25,6 +25,7 @@ For a local installation, follow the below instructions.
    conda install xarray h5netcdf netcdf4 zarr 
    conda install cartopy matplotlib-base
    conda install scipy numpy
+   pip install git+https://github.com/epfl-lts2/pygsp@sphere-graphs
    ```
    
 2. Alternatively install the dependencies using one of the appropriate below 

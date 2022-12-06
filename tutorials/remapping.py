@@ -27,7 +27,9 @@ import os
 import numpy as np 
 import pygsp as pg
 import xarray as xr
+from xsphere.meshes import SphericalVoronoiMesh_from_pygsp
 from xsphere.remapping import remap_dataset
+from xsphere.remapping import get_lat_lon_bnds
 
 ##-----------------------------------------------------------------------------.
 ### Load sample data
@@ -176,8 +178,6 @@ assert np.allclose(dst_ds.lon.values, lon_graph)
 
 ##----------------------------------------------------------------------------.
 ## - Check output lon_bnds, lat_bnds are SphericalVoronoi mesh of dst_graph 
-from xsphere.remapping import SphericalVoronoiMesh_from_pygsp
-from xsphere.remapping import get_lat_lon_bnds
 dst_graph = Healpix8
 dst_ds = ds_Healpix8_time
 
